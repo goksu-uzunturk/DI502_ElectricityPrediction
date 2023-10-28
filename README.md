@@ -1,1 +1,6 @@
 # DI502_ElectricityPrediction
+
+This repository contains the code and documentation of Electricity Consumption Predictior Model in Buildings.
+The dataset is taken from [ASHRAE Great Energy Predictor III Competition](https://www.kaggle.com/competitions/ashrae-energy-prediction/data]) 
+
+
