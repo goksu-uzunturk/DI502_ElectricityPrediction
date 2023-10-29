@@ -28,3 +28,13 @@ def reduce_memory_usage(df, verbose=True):
     end_mem = df.memory_usage().sum() / 1024**2
     if verbose: print('Mem. usage decreased to {:5.2f} Mb ({:.1f}% reduction)'.format(end_mem, 100 * (start_mem - end_mem) / start_mem))
     return df
+
+def break_datetime(df):
+  df['timestamp']= pd.to_datetime(df['timestamp'])
+  df['hour']= np.uint8(df['timestamp'].dt.hour)
+  df['dayofweek']= np.uint8(df['timestamp'].dt.dayofweek)
+  df['month']= np.uint8(df['timestamp'].dt.month)
+  df['dayofyear']= np.uint16(df['timestamp'].dt.dayofyear)
+  df['day']= np.uint16(df['timestamp'].dt.day)
+  df['year']= np.uint16(df['timestamp'].dt.year)
+  return df
