@@ -31,8 +31,6 @@ BUTTON_LAYOUT = [
 
 def set_iso_layout(
     model: str,
-    full_name: str,
-    description: str,
     year: str,
     mae: float,
     model_description: str,
@@ -48,16 +46,6 @@ def set_iso_layout(
             dbc.Col(width=7),
         ], justify='center'),
         html.Br(),
-        html.Br(),
-        dbc.Row([
-            dbc.Col(html.H1(full_name), width=9),
-            dbc.Col(width=2),
-        ], justify='center'),
-        dbc.Row([
-            dbc.Col(
-            html.Div(children=description), width=9),
-            dbc.Col(width=2)
-        ], justify='center'),
         html.Br(),
         dbc.Row([
             dbc.Col(
@@ -160,7 +148,7 @@ def plot_load_curve(value, model: str, load: dict, predictions: dict):
     )
 
 
-def plot_histogram(model: str, peak_data: dict):
+'''def plot_histogram(model: str, peak_data: dict):
     model = model.upper()
     return px.histogram(
         peak_data[model],
@@ -174,9 +162,9 @@ def plot_histogram(model: str, peak_data: dict):
         xaxis_title='Peak Load (MW)',
         yaxis_title='Number of Days'
     )
+'''
 
-
-def plot_scatter(value, model: str, peak_data: dict):
+'''def plot_scatter(value, model: str, peak_data: dict):
     fig = px.scatter(
         peak_data[model.upper()].dropna(),
         x="load_MW",
@@ -185,9 +173,9 @@ def plot_scatter(value, model: str, peak_data: dict):
     )
     return fig.update_layout(
         template=TEMPLATE, title='Peak Load vs. Temperature'
-    )
+    )'''
 
-def plot_load_duration(iso: str, load_duration_curves: dict):
+'''def plot_load_duration(iso: str, load_duration_curves: dict):
     return go.Figure().add_trace(
         go.Scatter(
             x=load_duration_curves[iso.upper()].reset_index().index,
@@ -199,4 +187,4 @@ def plot_load_duration(iso: str, load_duration_curves: dict):
             title="Peak Load Sorted by Day (Highest to Lowest)",
             xaxis_title="Number of Days",
             yaxis_title="Load (MW)",
-            template=TEMPLATE)
+            template=TEMPLATE)'''
