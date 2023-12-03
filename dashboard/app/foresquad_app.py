@@ -14,10 +14,10 @@ from IPython.display import Image
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 # from peaky_finders.d_utils import get_peak_data, get_forecasts
-import constant as c
+import enerji.DI502_ElectricityPrediction.dashboard.app.constant as c
 #from d_utils import create_load_duration
-import layout as l
-import dash_attempt_2 as d
+import enerji.DI502_ElectricityPrediction.dashboard.app.layout as l
+import enerji.DI502_ElectricityPrediction.dashboard.app.dash_attempt_2 as d
 from dash.exceptions import PreventUpdate
 
 XGBresults = pd.read_csv('/Users/bariscavus/PycharmProjects/pythonProject/enerji/DI502_ElectricityPrediction/dashboard/XGB_results.csv')
