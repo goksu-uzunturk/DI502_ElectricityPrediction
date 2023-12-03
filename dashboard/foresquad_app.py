@@ -296,7 +296,7 @@ style= {
     # Create a single graph for both train and test data
     dcc.Graph(id='metric-plot3'), '''
 
-linear_layout = html.Div([
+moving_layout = html.Div([
     html.H1('Moving Average Predictions'),
     html.P(c.MA_MODEL_DESCRIPTION),   
 ],
@@ -321,13 +321,23 @@ style= {
     # Create a single graph for both train and test data
     dcc.Graph(id='metric-plot2'),    '''
 
+arima_layout = html.Div([
+    html.H1('ARIMA Predictions'),
+    html.P(c.ARIMA_DESCRIPTION),      
+    
+],
+style= {
+    'background-color': 'lavender'
+})
 
 tabs_content = {
     '/': index_page,
     '/dataset': dataset_layout,
-    '/linear': linear_layout,
+    '/arima': moving_layout,
     '/xgboost': xgboost_layout,
-    '/decisiontree': dt_layout
+    '/decisiontree': dt_layout,
+    '/arima': arima_layout,
+
 }
 
 # Callback to update the graph based on the selected metric

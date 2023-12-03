@@ -9,7 +9,7 @@ BUTTON_LAYOUT = [
         html.Button('Dataset', id='dataset-button', className="mr-1"),
         href='/dataset'),
     dcc.Link(
-        html.Button('Linear Regression Predictions', id='linear-button', className="mr-1"),
+        html.Button('Moving Average Predictions', id='linear-button', className="mr-1"),
         href='/linear'),
     dcc.Link(
         html.Button('Decision Tree Predictions', id='dt-button', className="mr-1"),
