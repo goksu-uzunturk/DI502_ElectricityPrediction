@@ -1,29 +1,21 @@
 import pandas as pd
 import numpy as np
-import base64
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc
 from dash import html
 import plotly.express as px
-from matplotlib import pyplot as plt
-import seaborn as sns
-from io import BytesIO
 from dash.dependencies import Input, Output
 from IPython.display import Image
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
-# from peaky_finders.d_utils import get_peak_data, get_forecasts
-import enerji.DI502_ElectricityPrediction.dashboard.app.constant as c
-#from d_utils import create_load_duration
-import enerji.DI502_ElectricityPrediction.dashboard.app.layout as l
-import enerji.DI502_ElectricityPrediction.dashboard.app.dash_attempt_2 as d
+import dashboard.app.constant as c
+import dashboard.app.layout as l
+import dashboard.app.dash_attempt_2 as d
 from dash.exceptions import PreventUpdate
 
-XGBresults = pd.read_csv('/Users/bariscavus/PycharmProjects/pythonProject/enerji/DI502_ElectricityPrediction/dashboard/XGB_results.csv')
+XGBresults = pd.read_csv('./results/XGB_results.csv')
 
-#DTresults = pd.read_csv('/Users/bariscavus/PycharmProjects/pythonProject/enerji/DI502_ElectricityPrediction/dashboard/results/DT_results2.csv')
-#LRresults = pd.read_csv('/Users/bariscavus/PycharmProjects/pythonProject/enerji/DI502_ElectricityPrediction/dashboard/results/LR_results.csv')
 
 app = dash.Dash(
     external_stylesheets=[dbc.themes.LUX],
@@ -90,10 +82,7 @@ index_page = html.Div([
         dcc.Tabs(id='tabs', children=[
             dcc.Tab(label='Home', value='/'),
             dcc.Tab(label='Dataset', value='/dataset'),
-            dcc.Tab(label='Moving Average', value='/linear'),
-            dcc.Tab(label='Decision Tree', value='/model'),
             dcc.Tab(label='XGBoost', value='/xgboost'),
-            dcc.Tab(label='ARIMA', value='/arima'),
         ]),
     ]),
     ],
@@ -268,76 +257,14 @@ style= {
     'background-color': 'lavender'
 })
 
-dt_layout = html.Div([
-    html.H1('Decision Tree Predictions'),
-    html.P(c.DecisionTree_MODEL_DESCRIPTION),      
-    
-],
-style= {
-    'background-color': 'lavender'
-})
 
 
 
-'''# Metric Selection Dropdown
-    dcc.Dropdown(
-        id='metric-dropdown3',
-        options=[
-            {'label': 'MAE', 'value': 'mae'},
-            {'label': 'MAPE', 'value': 'mape'},
-            {'label': 'R2', 'value': 'r2'},
-            {'label': 'MSE', 'value': 'mse'},
-        ],
-        value='mse',
-        multi=False,
-        style={'width': '50%'}
-    ),
-
-    # Create a single graph for both train and test data
-    dcc.Graph(id='metric-plot3'), '''
-
-moving_layout = html.Div([
-    html.H1('Moving Average Predictions'),
-    html.P(c.MA_MODEL_DESCRIPTION),   
-],
-style= {
-    'background-color': 'lavender'
-})
-
-'''# Metric Selection Dropdown
-    dcc.Dropdown(
-        id='metric-dropdown2',
-        options=[
-            {'label': 'MAE', 'value': 'mae'},
-            {'label': 'MAPE', 'value': 'mape'},
-            {'label': 'R2', 'value': 'r2'},
-            {'label': 'MSE', 'value': 'mse'},
-        ],
-        value='mse',
-        multi=False,
-        style={'width': '50%'}
-    ),
-
-    # Create a single graph for both train and test data
-    dcc.Graph(id='metric-plot2'),    '''
-
-arima_layout = html.Div([
-    html.H1('ARIMA Predictions'),
-    html.P(c.ARIMA_DESCRIPTION),      
-    
-],
-style= {
-    'background-color': 'lavender'
-})
 
 tabs_content = {
     '/': index_page,
     '/dataset': dataset_layout,
-    '/arima': moving_layout,
     '/xgboost': xgboost_layout,
-    '/decisiontree': dt_layout,
-    '/arima': arima_layout,
-
 }
 
 # Callback to update the graph based on the selected metric
@@ -367,32 +294,7 @@ def update_metric_plot(selected_metric):
 
     return fig
 
-'''# Callback to update the graph based on the selected metric
-@app.callback(
-    Output('metric-plot2', 'figure'),
-    [Input('metric-dropdown2', 'value')]
-)
-def update_metric_plot(selected_metric):
-    # Choose the appropriate graph based on the selected metric
-    title = f'Training and Test {selected_metric.upper()}'
 
-    train_column = f'train_{selected_metric}'
-    test_column = f'test_{selected_metric}'
-
-    if train_column not in DTresults.columns or test_column not in XGBresults.columns:
-        raise PreventUpdate
-
-    y_train = DTresults[train_column]
-    y_test = DTresults[test_column]
-
-    fig = go.Figure()
-
-    fig.add_trace(go.Scatter(x=DTresults['fold'], y=y_train, mode='lines+markers', name='Train'))
-    fig.add_trace(go.Scatter(x=DTresults['fold'], y=y_test, mode='lines+markers', name='Test'))
-
-    fig.update_layout(title=title, xaxis_title='Fold', yaxis_title=selected_metric.upper())
-
-    return fig'''
 
 # Define a function to create content and graph for a given model
 def generate_model_tab_content(model_name, selected_dropdown_tab, data):
@@ -408,4 +310,4 @@ def generate_model_tab_content(model_name, selected_dropdown_tab, data):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True,mode = 'external',host = "0.0.0.0", port=8050)
+    app.run_server(debug=True)
