@@ -9,9 +9,8 @@ from dash.dependencies import Input, Output
 from IPython.display import Image
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
-import dashboard.app.constant as c
-import dashboard.app.layout as l
-import dashboard.app.dash_attempt_2 as d
+import constant as c
+import dash_attempt_2 as d
 from dash.exceptions import PreventUpdate
 
 XGBresults = pd.read_csv('./results/XGB_results.csv')
