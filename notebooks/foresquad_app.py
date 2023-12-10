@@ -9,55 +9,86 @@ from dash.dependencies import Input, Output
 from IPython.display import Image
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
-import dash_attempt_2 as d
-import constant as c
-import utils
 from dash.exceptions import PreventUpdate
 import os
-from sklearn.model_selection import TimeSeriesSplit
-import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
-from io import BytesIO
-import base64
-import xgboost as xgb
+import joblib
+import zipfile
+import seaborn as sns
+
+# Load data function
+def load_data():
+    # Specify the ZIP file name
+    zip_filename = "../dataset/filtered.zip"
+
+    # Extract the model file from the ZIP archive
+    with zipfile.ZipFile(zip_filename, "r") as archive:
+        # Extract the model file (named "your_model.pkl" in this example)
+        archive.extract("filtered.pkl")
+        
+    # Load the model
+    df = joblib.load("filtered.pkl")  # Replace with "pickle.load" if you used pickle
+
+    os.remove("filtered.pkl")
+
+    return df
+    
+
+# Log transformation function
+def log_transformation(data):
+    df['log_meter_reading']=np.log1p(df['meter_reading'])
+    df['log_square_feet']=np.log1p(df['square_feet'])
+    return df
+
+# Load data and perform log transformation
+df = load_data()
+train_data = df.copy()
+train_data = log_transformation(train_data)
+train_data['timestamp'] = pd.to_datetime(train_data['timestamp'])
+
+# Create new columns
+train_data['hour'] = train_data['timestamp'].dt.hour.astype(np.uint8)
+train_data['month'] = train_data['timestamp'].dt.month.astype(np.uint8)
+train_data['week'] = train_data['timestamp'].dt.week.astype(np.uint8)
+train_data[['year','weekofyear','dayofweek']]= np.uint16(train_data['timestamp'].dt.isocalendar())
+
+merged_data = train_data.copy()
+
+# Assuming train_data is your DataFrame
+hour_mean = train_data.groupby('hour')['log_meter_reading'].mean()
+
+# Create Seaborn line plot
+hour_mean.plot(kind='line', color='skyblue')
+
+# Convert Seaborn plot to Plotly figure
+fig_hour_mean = make_subplots(rows=1, cols=1)
+
+# Add Seaborn data to Plotly subplot
+trace_hour_mean = go.Scatter(x=hour_mean.index, y=hour_mean.values, mode='lines', line=dict(color='skyblue'))
+fig_hour_mean.add_trace(trace_hour_mean)
+
+# Update layout with axis labels
+fig_hour_mean.update_layout(
+    xaxis=dict(title='Hour'),
+    yaxis=dict(title='Mean of Log Meter readings'),
+    paper_bgcolor='lavender',
+    showlegend=False
+)
+    
+
+XGBoost_MODEL_DESCRIPTION = '''
+    The XG Boost forecasting model was trained on historical meter readings, weather, and building data
+    from 2016-2017. Temperature readings are from site_id - 1 and site_id - 6.
+'''
+
+Dataset_DESCRIPTION = '''
+    The dataset is taken from [ASHRAE Great Energy Predictor III Competition](https://www.kaggle.com/c/ashrae-energy-prediction) 
+'''
 
 XGBresults = pd.read_csv('results/XGB_results.csv')
-# Load the saved model
-XGB = utils.load_model("XGB_v2")
 
-df = utils.load_data()
-df = utils.log_transformation(df)
-df = utils.break_datetime(df)
-df = df[df['site_id'].isin([1, 6])]
-df = utils.nan_weather_filler(df)
-# encoding 
-df = utils.circular_encode(df,'month', 12)
-df = utils.label_encode(df,'primary_use')
-# Add holidays
-df = utils.apply_holidays(df)
-
-
-features = ['hour','air_temperature','month_sin','month_cos','log_square_feet', 'primary_use_encoded','is_holiday']
-target = 'log_meter_reading'
-
-# Assuming df is loaded and preprocessed
-tscv = TimeSeriesSplit(n_splits=5)  # You can adjust the number of splits
-fold_indices = []  # List to store train and test indices for each fold
-
-i = 0  # Start fold index from 1
-
-for train_index, test_index in tscv.split(df):
-    df_train, df_test = df.iloc[train_index], df.iloc[test_index]
-    
-    # Store indices for each fold
-    fold_indices.append((train_index, test_index))
-    
-    print('fold :', i+1)
-    print('Train: ', df_train['timestamp'].min(), df_train['timestamp'].max()) 
-    print('Test: ', df_test['timestamp'].min(), df_test['timestamp'].max()) 
-
-    i += 1
-
+# Load results information from CSV
+results_info = pd.read_csv('results_info.csv')
 
 
 app = dash.Dash(
@@ -203,7 +234,7 @@ style={'height': '100vh', 'display': 'flex', 'flex-direction': 'column', 'margin
 '''
 dataset_layout = html.Div([
     html.H1('Dataset'),
-    html.P(c.Dataset_DESCRIPTION),
+    html.P(Dataset_DESCRIPTION),
 
     dcc.Dropdown(
     
@@ -225,7 +256,7 @@ dataset_layout = html.Div([
 
     dcc.Dropdown(
         id='primary-use-dropdown',
-        options=[{'label': primary_use, 'value': primary_use} for primary_use in d.merged_data['primary_use'].unique()],
+        options=[{'label': primary_use, 'value': primary_use} for primary_use in merged_data['primary_use'].unique()],
         value='Education',  # Default selection
         style={'width': '33%', 'height': '%50'}
     ),
@@ -248,7 +279,7 @@ style={
 )
 def update_site_distribution_plot(selected_site):
     # Filter the data based on the selected site
-    filtered_data = d.merged_data[d.merged_data['site_id'] == selected_site]
+    filtered_data = merged_data[merged_data['site_id'] == selected_site]
 
     # Check if the filtered data is empty
     if filtered_data.empty:
@@ -285,7 +316,7 @@ def update_site_distribution_plot(selected_site):
 )
 def update_primary_use_distribution_plot(selected_primary_use):
     # Filter the data based on the selected primary use
-    filtered_data = d.merged_data[d.merged_data['primary_use'] == selected_primary_use]
+    filtered_data = merged_data[merged_data['primary_use'] == selected_primary_use]
 
     # Check if the filtered data is empty
     if filtered_data.empty:
@@ -316,7 +347,52 @@ def update_primary_use_distribution_plot(selected_primary_use):
 
     return fig
 
+day_labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+day_df = train_data.groupby(['dayofweek']).log_meter_reading.mean().reset_index()
 
+# Create Seaborn plot
+p = sns.lineplot(x=day_df['dayofweek'], y=day_df['log_meter_reading'], color='purple')
+p.set_xticks(range(5))
+p.set_xticklabels(day_labels)
+plt.xlabel('Days of the week')
+plt.ylabel("Log of Meter readings")
+
+# Convert Seaborn plot to Plotly figure
+fig8 = make_subplots(rows=1, cols=1)
+
+# Add Seaborn data to Plotly subplot
+trace = go.Scatter(x=day_df['dayofweek'], y=day_df['log_meter_reading'], mode='lines', line=dict(color='purple'))
+fig8.add_trace(trace)
+
+# Update layout if necessary
+fig8.update_layout(xaxis=dict(title='Days of the week'),
+                    yaxis=dict(title='Log of Meter readings'),
+                   paper_bgcolor='lavender',
+                    showlegend=False)
+
+# Assuming train_data is your DataFrame
+month_mean_data = train_data.groupby('month')['log_meter_reading'].mean()
+
+# Create Seaborn line plot
+month_mean_data.plot(kind='line', color='skyblue')
+
+# Plot the line chart using Plotly Express
+fig_month_mean = px.line(
+    data_frame=pd.DataFrame({'Month': month_mean_data.index, 'Mean Meter Reading': month_mean_data.values}),
+    x='Month',
+    y='Mean Meter Reading',
+    labels={'x': 'Month', 'y': 'Mean Meter Reading'},
+    title='Monthly Mean Meter Reading',
+    line_shape='linear',
+    render_mode='svg'
+)
+plt.figure(figsize=(15, 8))
+sns.set(style="whitegrid")
+
+# Update layout with lavender background color
+fig_month_mean.update_layout(
+    paper_bgcolor='lavender',
+)
 
 # Callback to update the model performance graph based on the selected time interval
 @app.callback(
@@ -326,126 +402,112 @@ def update_primary_use_distribution_plot(selected_primary_use):
 def update_model_performance(selected_interval):
     # Choose the appropriate graph based on the selected interval
     if selected_interval == 'hourly':
-        return d.fig_hour_mean
+        return fig_hour_mean
     elif selected_interval == 'weekly':
-        return d.fig8
+        return fig8
     elif selected_interval == 'monthly':
-        return d.month_mean
+        return fig_month_mean
     
 
 # Add the layout to the app callback
 xgboost_layout = html.Div([
     html.H1('XGBoost Predictions'),
-    html.P(c.XGBoost_MODEL_DESCRIPTION),
+    html.P(XGBoost_MODEL_DESCRIPTION),
 
-    html.Div([
-        dcc.Dropdown(
-            id='fold-dropdown',
-            options=[
-                {'label': f'Fold {i + 1}', 'value': i + 1} for i in range(5)
-            ],
-            value=1,
-            clearable=False,
-            style={'width': '50%'}
-        ),
-        dcc.Graph(id='prediction-graph'),
+    # Dropdown for selecting fold
+    dcc.Dropdown(
+        id='fold-dropdown',
+        options=[{'label': f'Fold {idx + 1}', 'value': idx} for idx in range(len(results_info))],
+        value=0  # Default selected fold
+    ),
 
-        # Metric Selection Dropdown
-        dcc.Dropdown(
+    # Graph for displaying selected fold
+    dcc.Graph(id='fold-plot'),
+
+    # Metric Selection Dropdown
+    dcc.Dropdown(
             id='metric-dropdown',
             options=[
                 {'label': 'MAE', 'value': 'mae'},
-                {'label': 'MAPE', 'value': 'mape'},
                 {'label': 'R2', 'value': 'r2'},
                 {'label': 'MSE', 'value': 'mse'},
             ],
             value='mse',
             multi=False,
             style={'width': '50%'}  # Corrected indentation
-        ),
+    ),
 
-        # Create a single graph for both train and test data
-        dcc.Graph(id='metric-plot'),    
-    ],
+    # Create a single graph for both train and test data
+    dcc.Graph(id='metric-plot'),    
+],
     style={
         'background-color': 'lavender'
-    }),
-])
-# Callback to update the graph based on selected fold
-@app.callback(Output('prediction-graph', 'figure'), [Input('fold-dropdown', 'value')])
-def update_graph(selected_fold):
-    # Get the data for the selected fold
-    fold_index = selected_fold - 1
-    df_train, df_test = df.iloc[train_index[fold_index]], df.iloc[test_index[fold_index]]
-    X_train, X_test = df_train[features], df_test[features]
-    y_train, y_test = df_train[target], df_test[target]
+})
 
-    # Generate the plot for the selected fold
-    img_base64 = generate_plot(XGB, X_train, y_train, X_test, y_test, selected_fold)
+# Callback to update the displayed graph based on the selected fold
+@app.callback(
+    Output('fold-plot', 'figure'),
+    [Input('fold-dropdown', 'value')]
+)
+def update_fold_plot(selected_fold):
+    actual_path = results_info['actual_data_paths'][selected_fold]
+    predicted_path = results_info['predicted_data_paths'][selected_fold]
 
-    # Return the figure for the graph
-    return {
-        'data': [],
+    actual_data = pd.read_csv(actual_path)
+    predicted_data = pd.read_csv(predicted_path)
+
+    figure = {
+        'data': [
+            {
+                'x': actual_data['timestamp'],
+                'y': actual_data['actual'],
+                'type': 'scatter',
+                'mode': 'lines+markers',
+                'name': 'Actual'
+            },
+            {
+                'x': predicted_data['timestamp'],
+                'y': predicted_data['predicted_test'],
+                'type': 'scatter',
+                'mode': 'lines+markers',
+                'name': 'Predicted'
+            }
+        ],
         'layout': {
-            'images': [
-                {
-                    'source': f'data:image/png;base64,{img_base64}',
-                    'x': 0,
-                    'y': 1,
-                    'xref': 'paper',
-                    'yref': 'paper',
-                    'sizex': 1,
-                    'sizey': 1,
-                    'xanchor': 'left',
-                    'yanchor': 'top',
-                }
-            ]
+            'title': f'Fold {selected_fold + 1} - Aggregated Daily Predictions vs Actual Values',
+            'xaxis': {'title': 'Date'},
+            'yaxis': {'title': 'Target Variable'},
         }
     }
 
+    return figure
+
+'''
+
+    # Iterate over the results_info to load and display data
+    *[dcc.Graph(
+        id=f'fold-{idx + 1}-plot',
+        figure={
+            'data': [
+                {
+                    'x': pd.read_csv(actual_path)['timestamp'],
+                    'y': pd.read_csv(predicted_path)['predicted_test'],
+                    'type': 'scatter',
+                    'mode': 'lines+markers',
+                    'name': f'Fold {idx + 1}'
+                }
+                for idx, (actual_path, predicted_path) in enumerate(zip(results_info['actual_data_paths'], results_info['predicted_data_paths']))
+            ],
+            'layout': {
+                'title': f'Fold {idx + 1} - Aggregated Daily Predictions vs Actual Values',
+                'xaxis': {'title': 'Date'},
+                'yaxis': {'title': 'Target Variable'},
+            }
+        }
+    ) for idx in range(len(results_info))],
 
 
-def generate_plot(XGB, X_train, y_train, X_test, y_test, fold):
-    y_pred_train = XGB.predict(X_train)
-    y_pred_test = XGB.predict(X_test)
-
-    # DataFrames to store aggregated values for the current fold
-    aggregated_actual_df = pd.concat([pd.DataFrame({'timestamp': df_train['timestamp'], 'actual': y_train}),
-                                      pd.DataFrame({'timestamp': df_test['timestamp'], 'actual': y_test})])
-
-    aggregated_predicted_df = pd.concat([pd.DataFrame({'timestamp': df_train['timestamp'], 'predicted_train': y_pred_train}),
-                                         pd.DataFrame({'timestamp': df_test['timestamp'], 'predicted_test': y_pred_test})])
-
-    # Group by timestamp and resample on a daily basis
-    aggregated_actual_df.set_index('timestamp', inplace=True)
-    aggregated_predicted_df.set_index('timestamp', inplace=True)
-
-    aggregated_actual_daily = aggregated_actual_df.resample('D').mean()
-    aggregated_predicted_daily = aggregated_predicted_df.resample('D').mean()
-
-    # Plotting aggregated daily predictions for the current fold using matplotlib
-    plt.figure(figsize=(12, 8))
-    plt.plot(aggregated_actual_daily.index, aggregated_actual_daily['actual'], label='Actual', marker='o', color='green')
-    plt.plot(aggregated_predicted_daily.index, aggregated_predicted_daily['predicted_train'], label='Predicted Train', marker='x', linestyle='--', color='blue')
-    plt.plot(aggregated_predicted_daily.index, aggregated_predicted_daily['predicted_test'], label='Predicted Test', marker='x', linestyle='--', color='red')
-    plt.title(f'Aggregated Daily Predictions vs Actual Values (Fold {fold})')
-    plt.xlabel('Date')
-    plt.ylabel('Target Variable')
-    plt.legend()
-    # Format x-axis ticks as months
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
-    plt.gca().xaxis.set_major_locator(mdates.MonthLocator())
-
-    # Save the plot to a BytesIO object
-    img_buf = BytesIO()
-    plt.savefig(img_buf, format='png')
-    img_buf.seek(0)
-
-    # Convert the plot to base64 for Dash
-    img_base64 = base64.b64encode(img_buf.read()).decode('utf-8')
-
-    return img_base64
-
+'''
 
 
 tabs_content = {
