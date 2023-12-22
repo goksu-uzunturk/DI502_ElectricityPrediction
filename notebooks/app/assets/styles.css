@@ -21,7 +21,7 @@
 }
 
 .fadeIn {
-  animation: fadeIn 1s ease-in-out;  /* Adjust the duration and timing function as needed */
+  animation: fadeIn 2s ease-in-out;  /* Adjust the duration and timing function as needed */
 }
 @keyframes slideIn {
   from {
@@ -37,3 +37,4 @@
 .slideIn {
   animation: slideIn 1s ease-in-out;  /* Adjust the duration and timing function as needed */
 }
+
