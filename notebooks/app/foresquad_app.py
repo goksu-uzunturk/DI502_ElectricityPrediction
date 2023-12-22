@@ -66,6 +66,7 @@ Dataset_DESCRIPTION = '''
 '''
 
 XGBresults = pd.read_csv('XGB_results.csv')
+nmetrics = pd.read_csv('naive_metrics.csv')
 
 # Load results information from CSV
 results_info = pd.read_csv('results_info.csv')
@@ -87,34 +88,35 @@ app.layout = html.Div([
                 dcc.Tab(
                     label= " Home",
                     value='/',
-                    style={'background-color': '#F5F5F5', 'color': '#333333', 'border': 'none'},
-                    selected_style={'background-color': '#F5F5F5', 'color': '#333333', 'border': 'none'}
+                    style={'background-color': '#FADBD8', 'color': 'grey', 'border': '1px solid #FADBD8'},
+                    selected_style={'background-color': '#FADBD8', 'color': 'white', 'border': '1px solid #FADBD8'}
                 ),
                 dcc.Tab(
                     label='Team',
                     value='/team',
-                    style={'background-color': '#F5F5F5', 'color': '#333333', 'border': 'none'},
-                    selected_style={'background-color': '#F5F5F5', 'color': '#333333', 'border': 'none'}
+                    style={'background-color': '#85C1E9', 'color': 'grey', 'border': '1px solid #85C1E9'},
+                    selected_style={'background-color': '#85C1E9', 'color': 'white', 'border': '1px solid #85C1E9'}
                 ),
                 dcc.Tab(
                     label='Dataset',
                     value='/dataset',
-                    style={'background-color': '#F5F5F5', 'color': '#333333', 'border': 'none'},
-                    selected_style={'background-color': '#F5F5F5', 'color': '#333333', 'border': 'none'}
+                    style={'background-color': '#AED6F1', 'color': 'grey', 'border': '1px solid #AED6F1'},
+                    selected_style={'background-color': '#AED6F1', 'color': 'white', 'border': '1px solid #AED6F1'}
                 ),
                 dcc.Tab(
                     label='Model',
                     value='/xgboost',
-                    style={'background-color': '#F5F5F5', 'color': '#333333', 'border': 'none'},
-                    selected_style={'background-color': '#F5F5F5', 'color': '#333333', 'border': 'none'}
+                    style={'background-color': '#D2B4DE', 'color': 'grey', 'border': '1px solid #D2B4DE'},
+                    selected_style={'background-color': '#D2B4DE', 'color': 'white', 'border': '1px solid #D2B4DE'}
                 ),
             ],
             style={
-                'background-color': '#F5F5F5',
-                'padding': '10px',
+                'background-color': 'rgba(255, 255, 255, 0.3)',
+                'padding': '20px',
                 'flex-grow': 1,
                 'margin': '0',
             },
+            # Add `className='tabs'` for styling
             className='tabs',
         ),
     ],
@@ -179,7 +181,6 @@ index_page = html.Div([
         'background-repeat': 'no-repeat',
         'height': '60vh',  # Adjust the height to cover the entire viewport
         'display': 'flex',
-        'opacity': 0.8,  # Adjust the opacity value (0.0 to 1.0)
         'flex-direction': 'column',
         'align-items': 'left',
         'justify-content': 'center',
@@ -200,32 +201,6 @@ index_page = html.Div([
     ], justify="center"),
     html.Br(),
     
-    # Add colored sections with sliding in animations here
-    dbc.Row([
-        dbc.Col([
-            html.Div([
-                html.H3("Section 1 Title"),
-                html.P("Section 1 content"),
-            ], className='slideIn',  # Apply the fadeIn class
-            style={'background-color': '#FADBD8', 'padding': '20px'}),
-        ], width=4),
-        dbc.Col([
-            html.Div([
-                html.H3("Section 2 Title"),
-                html.P("Section 2 content"),
-            ], className='slideIn',  # Apply the fadeIn class
-            style={'background-color': '#85C1E9', 'padding': '20px'}),
-        ], width=4),
-        dbc.Col([
-            html.Div([
-                html.H3("Section 3 Title"),
-                html.P("Section 3 content"),
-            ], className='slideIn',  # Apply the fadeIn class
-            style={'background-color': '#AED6F1', 'padding': '20px'}),
-        ], width=4),
-    ], justify='center'),
-    
-
 ])
     
 
@@ -291,7 +266,7 @@ team_layout = html.Div([
                 target='_blank',  # Open the link in a new tab
                 style={'text-decoration': 'none', 'margin-top': '10px'}  # Adjust styling as needed
             ),
-        ],style={'margin': '10px', 'padding': '10px', 'width':'23.5%', 'border': '1px solid #CCCCCC', 'border-radius': '5px', 'animation': 'fadeIn 4s ease-in-out'}),
+        ], style={'margin': '10px', 'padding': '10px', 'width':'23.5%', 'border': '1px solid #CCCCCC', 'border-radius': '5px', 'animation': 'fadeIn 4s ease-in-out'}),
     ], style={'display': 'flex', 'justify-content': 'space-between'}),
 
         html.Div([
@@ -559,14 +534,24 @@ def update_fold_plot(selected_fold):
                 'y': actual_data['actual'],
                 'type': 'scatter',
                 'mode': 'lines+markers',
-                'name': 'Actual'
+                'name': 'Actual',
+                'line': {'color': 'blue'}  # Set color for Actual line
             },
             {
                 'x': predicted_data['timestamp'],
                 'y': predicted_data['predicted_test'],
                 'type': 'scatter',
                 'mode': 'lines+markers',
-                'name': 'Predicted'
+                'name': 'Predicted Test',
+                'line': {'color': 'purple'}  # Set color for Predicted Test line
+            },
+            {
+                'x': predicted_data['timestamp'],
+                'y': predicted_data['naive_prediction_test'],
+                'type': 'scatter',
+                'mode': 'lines+markers',
+                'name': 'Naive Predictor',
+                'line': {'dash': 'dash', 'color': 'pink'}
             }
         ],
         'layout': {
@@ -577,7 +562,6 @@ def update_fold_plot(selected_fold):
     }
 
     return figure
-
 
 tabs_content = {
     '/': index_page,
@@ -590,33 +574,47 @@ tabs_content = {
 # Callback to update the graph and metric definition based on the selected metric
 @app.callback(
     [Output('metric-plot', 'figure'),
-     Output('metric-definition', 'children')],  # Corrected syntax here
+     Output('metric-definition', 'children')],
     [Input('metric-dropdown', 'value')]
 )
 def update_metric_plot_and_definition(selected_metric):
     # Your existing code for updating the metric plot goes here
 
     # Choose the appropriate graph based on the selected metric
-    title = f'Training and Test {selected_metric.upper()}'
+    title = f'Baseline vs. XGB results based on {selected_metric.upper()}'
 
-    train_column = f'train_{selected_metric}'
+    train_column = f'{selected_metric}_test_naive'
     test_column = f'test_{selected_metric}'
 
-    if train_column not in XGBresults.columns or test_column not in XGBresults.columns:
-        raise PreventUpdate
-
-    y_train = XGBresults[train_column]
+    y_train = nmetrics[train_column]
     y_test = XGBresults[test_column]
 
     fig = go.Figure()
 
-    fig.add_trace(go.Scatter(x=XGBresults['fold'], y=y_train, mode='lines+markers', name='Train'))
-    fig.add_trace(go.Scatter(x=XGBresults['fold'], y=y_test, mode='lines+markers', name='Test'))  # Corrected x values
+    # Naive Predictor trace with dashed line, bigger markers, and a specific color
+    fig.add_trace(go.Scatter(
+        x=nmetrics['Fold'],
+        y=y_train,
+        mode='lines+markers',
+        name='Naive Predictor',
+        line=dict(dash='dash', color='pink'),  # Set color for Naive Predictor line
+        marker=dict(size=10)  # Change marker size as needed
+    ))
 
-    fig.update_layout(title=title, xaxis_title='Fold', yaxis_title=selected_metric.upper())
+    # XGB trace with dashed line, bigger markers, and a different color
+    fig.add_trace(go.Scatter(
+        x=XGBresults['Fold'],
+        y=y_test,
+        mode='lines+markers',
+        name='XGB',
+        line=dict(dash='dash', color='purple'),  # Set color for XGB line
+        marker=dict(size=10)  # Change marker size as needed
+    ))
 
-
-    
+    fig.update_layout(title={
+            'text': title,
+            'x': 0.05,  # Adjust the margin from the left side
+        }, xaxis_title='Fold', yaxis_title=selected_metric.upper())
 
     # Define metric definitions
     metric_definitions = {
@@ -634,9 +632,8 @@ def update_metric_plot_and_definition(selected_metric):
 
 
 
+
   
 
 if __name__ == '__main__':
     app.run_server(debug=True, host='0.0.0.0', port=80)
-
-

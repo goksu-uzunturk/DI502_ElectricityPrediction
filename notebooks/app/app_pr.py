@@ -87,35 +87,34 @@ app.layout = html.Div([
                 dcc.Tab(
                     label= " Home",
                     value='/',
-                    style={'background-color': '#FADBD8', 'color': 'grey', 'border': '1px solid #FADBD8'},
-                    selected_style={'background-color': '#FADBD8', 'color': 'white', 'border': '1px solid #FADBD8'}
+                    style={'background-color': '#F5F5F5', 'color': '#333333', 'border': 'none'},
+                    selected_style={'background-color': '#F5F5F5', 'color': '#333333', 'border': 'none'}
                 ),
                 dcc.Tab(
                     label='Team',
                     value='/team',
-                    style={'background-color': '#85C1E9', 'color': 'grey', 'border': '1px solid #85C1E9'},
-                    selected_style={'background-color': '#85C1E9', 'color': 'white', 'border': '1px solid #85C1E9'}
+                    style={'background-color': '#F5F5F5', 'color': '#333333', 'border': 'none'},
+                    selected_style={'background-color': '#F5F5F5', 'color': '#333333', 'border': 'none'}
                 ),
                 dcc.Tab(
                     label='Dataset',
                     value='/dataset',
-                    style={'background-color': '#AED6F1', 'color': 'grey', 'border': '1px solid #AED6F1'},
-                    selected_style={'background-color': '#AED6F1', 'color': 'white', 'border': '1px solid #AED6F1'}
+                    style={'background-color': '#F5F5F5', 'color': '#333333', 'border': 'none'},
+                    selected_style={'background-color': '#F5F5F5', 'color': '#333333', 'border': 'none'}
                 ),
                 dcc.Tab(
                     label='Model',
                     value='/xgboost',
-                    style={'background-color': '#D2B4DE', 'color': 'grey', 'border': '1px solid #D2B4DE'},
-                    selected_style={'background-color': '#D2B4DE', 'color': 'white', 'border': '1px solid #D2B4DE'}
+                    style={'background-color': '#F5F5F5', 'color': '#333333', 'border': 'none'},
+                    selected_style={'background-color': '#F5F5F5', 'color': '#333333', 'border': 'none'}
                 ),
             ],
             style={
-                'background-color': 'rgba(255, 255, 255, 0.3)',
-                'padding': '20px',
+                'background-color': '#F5F5F5',
+                'padding': '10px',
                 'flex-grow': 1,
                 'margin': '0',
             },
-            # Add `className='tabs'` for styling
             className='tabs',
         ),
     ],
@@ -180,6 +179,7 @@ index_page = html.Div([
         'background-repeat': 'no-repeat',
         'height': '60vh',  # Adjust the height to cover the entire viewport
         'display': 'flex',
+        'opacity': 0.8,  # Adjust the opacity value (0.0 to 1.0)
         'flex-direction': 'column',
         'align-items': 'left',
         'justify-content': 'center',
@@ -200,6 +200,32 @@ index_page = html.Div([
     ], justify="center"),
     html.Br(),
     
+    # Add colored sections with sliding in animations here
+    dbc.Row([
+        dbc.Col([
+            html.Div([
+                html.H3("Section 1 Title"),
+                html.P("Section 1 content"),
+            ], className='slideIn',  # Apply the fadeIn class
+            style={'background-color': '#FADBD8', 'padding': '20px'}),
+        ], width=4),
+        dbc.Col([
+            html.Div([
+                html.H3("Section 2 Title"),
+                html.P("Section 2 content"),
+            ], className='slideIn',  # Apply the fadeIn class
+            style={'background-color': '#85C1E9', 'padding': '20px'}),
+        ], width=4),
+        dbc.Col([
+            html.Div([
+                html.H3("Section 3 Title"),
+                html.P("Section 3 content"),
+            ], className='slideIn',  # Apply the fadeIn class
+            style={'background-color': '#AED6F1', 'padding': '20px'}),
+        ], width=4),
+    ], justify='center'),
+    
+
 ])
     
 
@@ -265,7 +291,7 @@ team_layout = html.Div([
                 target='_blank',  # Open the link in a new tab
                 style={'text-decoration': 'none', 'margin-top': '10px'}  # Adjust styling as needed
             ),
-        ], style={'margin': '10px', 'padding': '10px', 'width':'23.5%', 'border': '1px solid #CCCCCC', 'border-radius': '5px', 'animation': 'fadeIn 4s ease-in-out'}),
+        ],style={'margin': '10px', 'padding': '10px', 'width':'23.5%', 'border': '1px solid #CCCCCC', 'border-radius': '5px', 'animation': 'fadeIn 4s ease-in-out'}),
     ], style={'display': 'flex', 'justify-content': 'space-between'}),
 
         html.Div([
@@ -606,22 +632,11 @@ def update_metric_plot_and_definition(selected_metric):
     return fig, metric_definition
 
 
-# Define a function to create content and graph for a given model
-def generate_model_tab_content(model_name, selected_dropdown_tab, data):
-    content = html.Div([
-        html.H3(f"{model_name} {selected_dropdown_tab} Content"),
-        # Add more content as needed
-    ])
-
-    # Replace this with your actual graph generation code
-    graph = px.scatter(data, x="x", y="y", title=f"{model_name} Graph for {selected_dropdown_tab}")
-
-    return content, graph
-
-
 
 
   
 
 if __name__ == '__main__':
     app.run_server(debug=True, host='0.0.0.0', port=80)
+
+
